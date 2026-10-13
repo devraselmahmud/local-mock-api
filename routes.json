@@ -1,0 +1,7 @@
+[
+  { "method": "GET", "path": "/health", "body": { "status": "ok" } },
+  { "method": "GET", "path": "/users", "body": [{ "id": 1, "name": "Alex" }, { "id": 2, "name": "Sam" }] },
+  { "method": "POST", "path": "/users", "status": 201, "body": { "id": 3, "name": "New user" } },
+  { "method": "GET", "path": "/slow", "delay": 1000, "body": { "message": "Delayed response" } },
+  { "method": "GET", "path": "/error", "status": 500, "body": { "error": "Example server error" } }
+]
