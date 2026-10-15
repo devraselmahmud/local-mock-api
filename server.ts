@@ -41,8 +41,9 @@ export function createMockServer(routes: Route[]) {
     const path = (request.url ?? '/').split('?')[0];
     const route = routes.find((item) => item.method === request.method && item.path === path);
     if (route?.delay) await setTimeout(route.delay);
-    response.writeHead(route?.status ?? (route ? 200 : 404), { 'Content-Type': 'application/json; charset=utf-8' });
-    response.end(JSON.stringify(route ? route.body : { error: 'Route not found' }));
+    const status = route?.status ?? (route ? 200 : 404);
+    response.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
+    response.end(status === 205 ? undefined : JSON.stringify(route ? route.body : { error: 'Route not found' }));
   });
 }
 

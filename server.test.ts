@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { get } from 'node:http';
 import { createMockServer, validateRoutes } from './server.ts';
 
 test('accepts valid route configuration', () => {
@@ -51,6 +52,7 @@ test('HTTP responses', async (t) => {
     { method: 'GET', path: '/users', body: [{ id: 1 }] },
     { method: 'POST', path: '/users', status: 201, body: { id: 2 } },
     { method: 'GET', path: '/slow', delay: 50, body: { ready: true } },
+    { method: 'GET', path: '/reset', status: 205, body: { ignored: true } },
   ]));
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   t.after(() => new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve())));
@@ -69,6 +71,20 @@ test('HTTP responses', async (t) => {
     const response = await fetch(`${base}/users`, { method: 'POST' });
     assert.equal(response.status, 201);
     assert.deepEqual(await response.json(), { id: 2 });
+  });
+
+  await t.test('sends no body for HTTP 205', async () => {
+    const { status, body } = await new Promise<{ status: number | undefined; body: string }>((resolve, reject) => {
+      get(`${base}/reset`, (response) => {
+        let body = '';
+        response.setEncoding('utf8');
+        response.on('data', (chunk) => { body += chunk; });
+        response.on('error', reject);
+        response.on('end', () => resolve({ status: response.statusCode, body }));
+      }).on('error', reject);
+    });
+    assert.equal(status, 205);
+    assert.equal(body, '');
   });
 
   await t.test('waits for configured delay', async () => {
