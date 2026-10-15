@@ -9,12 +9,18 @@ export function validateRoutes(value: unknown): Route[] {
   if (!Array.isArray(value)) throw new Error('Routes must be an array');
   const keys = new Set<string>();
   for (const route of value) {
-    if (!route || typeof route !== 'object' || !methods.includes(route.method) ||
-        typeof route.path !== 'string' || !route.path.startsWith('/') || /[?#\s]/.test(route.path) ||
-        !Object.hasOwn(route, 'body') ||
-        (route.status !== undefined && (!Number.isInteger(route.status) || route.status < 200 || route.status > 599)) ||
-        (route.delay !== undefined && (!Number.isInteger(route.delay) || route.delay < 0 || route.delay > 60000))) {
-      throw new Error('Invalid route: require method, absolute path, body, status 200–599, delay 0–60000 ms');
+    if (!route || typeof route !== 'object' || Array.isArray(route)) throw new Error('Route must be an object');
+    if (route.method === 'OPTIONS') throw new Error('OPTIONS is reserved for CORS preflight');
+    if (!methods.includes(route.method)) throw new Error('Route method must be GET, POST, PUT, PATCH, DELETE or HEAD');
+    if (typeof route.path !== 'string' || !route.path.startsWith('/') || /[?#\s]/.test(route.path)) {
+      throw new Error('Route path must be absolute, without query, fragment or whitespace');
+    }
+    if (!Object.hasOwn(route, 'body')) throw new Error('Route body is required');
+    if (route.status !== undefined && (!Number.isInteger(route.status) || route.status < 200 || route.status > 599)) {
+      throw new Error('Route status must be an integer from 200 to 599');
+    }
+    if (route.delay !== undefined && (!Number.isInteger(route.delay) || route.delay < 0 || route.delay > 60000)) {
+      throw new Error('Route delay must be an integer from 0 to 60000 ms');
     }
     const key = `${route.method} ${route.path}`;
     if (keys.has(key)) throw new Error(`Duplicate route: ${key}`);
